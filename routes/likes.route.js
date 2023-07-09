@@ -1,10 +1,11 @@
 const express = require("express");
 const { Likes, Posts, Users } = require("../models");
 const { Sequelize } = require("sequelize");
+const authMiddleware = require("../middelwares/auth-middleware");
 const router = express.Router();
 
 // 게시글에 좋아요 추가
-router.post("/like/:postId", async (req, res) => {
+router.post("/like/:postId", authMiddleware, async (req, res) => {
   try {
     // postId값은 파라미터로 받아온다.
     const { postId } = req.params;
