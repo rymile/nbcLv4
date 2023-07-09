@@ -5,7 +5,7 @@ const postsRouter = require("./routes/posts.route");
 const commentsRouter = require("./routes/comments.route");
 const likeRouter = require("./routes/likes.route");
 const app = express();
-const PORT = 3003;
+const PORT = 3002;
 
 app.use(express.json());
 app.use(cookieParser());

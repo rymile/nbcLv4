@@ -1,5 +1,6 @@
 const express = require("express");
 const { Likes, Posts, Users } = require("../models");
+const { Sequelize } = require("sequelize");
 const router = express.Router();
 
 // 게시글에 좋아요 추가
@@ -36,16 +37,13 @@ router.post("/like/:postId", async (req, res) => {
       PostId: postId,
     });
 
-    // 생성했을 경우 좋아요 카운트를 1 추가한다.
-    post.likeCount += 1;
-    // post요청을 보냈을 때 해당 요청을 save한다.
-    await post.save();
-    // 좋아요 추가 res 호출
-    return res.status(200).json({ message: "좋아요가 추가되었습니다." });
+    // 좋아요 개수 추가하는 로직
+    await Posts.update(
+      { likeCount: post.likeCount + 1 },
+      { where: { postId: postId } }
+    );
 
-    // 오류 발생 시 catch쪽의 에러를 발생시킨다.
-    // ex) 1. userId나 postId가 없을 때
-    //     2. body데이터에 userId와 userInfoId가 없을 때
+    return res.status(200).json({ message: "좋아요가 추가되었습니다." });
   } catch (error) {
     console.error("좋아요 추가 중 에러 발생", error);
     return res
@@ -54,51 +52,43 @@ router.post("/like/:postId", async (req, res) => {
   }
 });
 
-// 좋아요가 눌린 게시글 조회 엔드포인트
+// 좋아요가 눌린 게시글 조회
 router.get("/liked/", async (req, res) => {
   try {
-    // Likes 모델을 사용하여 좋아요가 있는 게시글의 ID 목록을 조회합니다.
-    const likedPostIds = await Likes.findAll({
-      attributes: ["PostId"],
-    });
-
-    // 게시글 ID 목록을 배열로 추출합니다.
-    const postIds = likedPostIds.map((likedPostId) => likedPostId.PostId);
-
-    // 좋아요가 있는 게시글을 조회합니다.
+    // Posts 테이블에서 찾아온다.
     const likedPosts = await Posts.findAll({
-      where: { postId: postIds },
+      attributes: [
+        "postId",
+        "title",
+        "content",
+        "createdAt",
+        "updatedAt",
+        [
+          // 해당 문법으로 DB안에서 Posts의 likeCount 컬럼을 직접 찾아옴
+          Sequelize.literal(`(
+            SELECT COUNT(*) 
+            FROM Likes 
+            WHERE Likes.PostId = Posts.postId
+          )`),
+          "likeCount",
+        ],
+      ],
+      // 찾아온 후 Users테이블의 게시글 정보만 가져온다.
+      include: [
+        {
+          model: Users,
+          attributes: [],
+        },
+      ],
     });
-
+    // 가져온 정보가 정사일 경우 likedPosts를 결과에 포함시킴
     return res.status(200).json(likedPosts);
+    // 에러 핸들링 부분
   } catch (error) {
     console.error("좋아요가 눌린 게시글 조회 중 에러 발생", error);
     return res
       .status(500)
       .json({ message: "서버 오류로 인해 게시글을 조회할 수 없습니다." });
-  }
-});
-
-// 좋아요 상세 조회 엔드포인트
-router.get("/liked/:likeId", async (req, res) => {
-  try {
-    const { likeId } = req.params;
-
-    // 좋아요 상세 정보를 조회합니다.
-    const like = await Likes.findByPk(likeId, {
-      include: [Posts, Users],
-    });
-
-    if (!like) {
-      return res.status(404).json({ message: "좋아요를 찾을 수 없습니다." });
-    }
-
-    return res.status(200).json(like);
-  } catch (error) {
-    console.error("좋아요 상세 조회 중 에러 발생", error);
-    return res
-      .status(500)
-      .json({ message: "서버 오류로 인해 좋아요를 조회할 수 없습니다." });
   }
 });
 
