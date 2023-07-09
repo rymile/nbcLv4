@@ -82,7 +82,7 @@ router.get("/liked/", async (req, res) => {
         },
       ],
     });
-    // 가져온 정보가 정사일 경우 likedPosts를 결과에 포함시킴
+    // 가져온 정보가 정상일 경우 likedPosts를 결과에 포함시킴
     return res.status(200).json(likedPosts);
     // 에러 핸들링 부분
   } catch (error) {
