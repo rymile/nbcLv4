@@ -1,9 +1,9 @@
 {
   "development": {
-    "username": "root",
-    "password": "4321aaaa",
-    "database": "postproject2",
-    "host": "express-database.ckh0hfq9pcee.ap-northeast-2.rds.amazonaws.com",
+    "username": "",
+    "password": "",
+    "database": "",
+    "host": "",
     "dialect": "mysql"
   },
 
